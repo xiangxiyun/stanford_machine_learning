@@ -12,11 +12,11 @@ class LinearRegression:
     def gradient_descent(self, X, y, theta, learning_rate, iteration, m):
 
         self.theta = theta
+        self.cost_history[0,0] = self.cost_function(X, y, self.theta, m)
 
-        for i in range(iteration):
+        for i in range(1,iteration):
             # hypothesis function
             h = self._hypothesis_function(X, self.theta)
-            print(h)
 
             # update theta
             self.theta = self.theta - learning_rate * (1/float(m)) * np.dot(X.T, (h-y))
@@ -28,18 +28,31 @@ class LinearRegression:
 
         return self.theta
 
+    def _feature_normalize(self, X, m):
 
-    def training(self, X, y, learning_rate = 0.01, iteration = 400):
+        X_mean = np.mean(X, axis=0)
+        X_std = np.std(X, axis=0)
+
+        for i in range(m):
+            X[i, :] = (X[i, :] - X_mean) / X_std
+
+        return X
+
+
+    def training(self, X, y, learning_rate = 0.01, iteration = 400, normalization = False):
+
 
         m = X.shape[0] # total number of training data
         n = X.shape[1] # total number of features
 
-        self.X = np.concatenate((np.ones((m,1), dtype= float),X), axis = 1) #create corresponding x0 for theta0
+        self.X = X
+        if normalization:
+            self.X = self._feature_normalize(X,m)
+
+        self.X = np.concatenate((np.ones((m,1), dtype= float),self.X), axis = 1) #create corresponding x0 for theta0
         self.y = y
 
         theta = np.zeros((n+1, 1))
-        # print('theta shape:')
-        # print(theta.shape)
 
         self.cost_history = np.zeros((1,iteration))
 
