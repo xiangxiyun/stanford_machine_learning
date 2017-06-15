@@ -30,29 +30,16 @@ if __name__ == '__main__':
 
     myLR = LinearRegression()
 
-    #test cost function
-    test_X = np.concatenate((np.ones((X.shape[0], 1), dtype=float), X), axis=1)
-    test_theta = np.array([[-1], [2]])
-    test_y = y
-    test_m = test_X.shape[0]
-    print(' ------- Test cost function ------- ')
-    print('With theta equals: [-1 ; 2]')
-    print('Expected cost value (approx) 54.24')
-    print(myLR.cost_function(test_X, test_y, test_theta, test_m))
-    print(' ---------------------------------- ')
-
-
-    print('\n\nX shape:')
+    print('\nX shape:')
     print(X.shape)
     print('Y shape:')
     print(y.shape)
 
-    #plot training data
+    # plot training data
     plt.figure(1)
-    plt.subplot(211)
-
     plt.plot(X, y, 'g+')
     plt.title('Training Data and Linear Fit')
+
 
     iteration = 1500
     learning_rate = 0.01
@@ -61,24 +48,24 @@ if __name__ == '__main__':
     # First looking at the feature values.
     # When features differ by orders of magnitude,
     # first performing feature scaling.
-    theta = myLR.training(X, y, learning_rate, iteration, normalization=False)
+    method = 'G'
+    normalization = False
+    theta = myLR.training(X, y, learning_rate, iteration, normalization=normalization, method = method)
     print('Theta:')
     print(theta.T)
 
 
-    #print fit line
-    x_axis = X[:, -1:]
-    a = np.concatenate((np.ones((x_axis.shape[0], 1), dtype=float), x_axis), axis=1)
-    res = np.dot(a, myLR.theta)
-
-    plt.plot(x_axis, res, 'y-')
+    # plot fit line
+    res = myLR.predict(X, theta, normalization=normalization)
+    plt.plot(X, res, 'y-')
 
 
-    #print cost history
-    plt.subplot(212)
-    plt.plot(np.arange(0, 30, 1), myLR.cost_history.T[:30,:], 'b-')
-    plt.xlabel('Number of Iterations')
-    plt.ylabel('Cost')
-    plt.title('Convergence of Gradient Descent')
+    # If method = 'G', gradient descent, plot cost history
+    if method == 'G':
+        plt.figure(2)
+        plt.plot(np.arange(0, 30, 1), myLR.cost_history.T[:30,:], 'b-')
+        plt.xlabel('Number of Iterations')
+        plt.ylabel('Cost')
+        plt.title('Convergence of Gradient Descent')
 
     plt.show()

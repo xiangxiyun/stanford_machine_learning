@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from linear_regression import LinearRegression
 
 def read_data(filename):
@@ -27,7 +28,6 @@ if __name__ == '__main__':
     X = training_data[:, :-1]
     y = training_data[:, -1:]
 
-
     myLR = LinearRegression()
 
 
@@ -36,24 +36,51 @@ if __name__ == '__main__':
     print('Y shape:')
     print(y.shape)
 
+    # Plot training data
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111, projection='3d')
 
+    x1s = X[:, 0:1]
+    x2s = X[:, 1:2]
+    ys = y
+
+    scatter1 = ax.scatter(x1s, x2s, ys, c='b', marker='^', label = 'training data')
+
+    ax.set_xlabel('x1(area)')
+    ax.set_ylabel('x2(#bedroom)')
+    ax.set_zlabel('y(price)')
+
+
+    # Begin training data
     iteration = 1500
     learning_rate = 0.1
 
 
+
+    method = 'G'    # Using gradient descent to calculate theta
     # First looking at the feature values.
     # When features differ by orders of magnitude,
     # first performing feature scaling.
-    theta = myLR.training(X, y, learning_rate, iteration, normalization=True)
+    normalization = True
+
+    theta = myLR.training(X, y, learning_rate, iteration, normalization=normalization, method = method)
     print('Theta:')
     print(theta.T)
 
 
-    #print cost history
+    # Plot fit result
+    res = myLR.predict(X, theta, normalization=normalization)
+    scatter2 = ax.scatter(x1s, x2s, res, c='r', marker='o', label = 'fitting result')
 
-    plt.plot(np.arange(0, 30, 1), myLR.cost_history.T[:30,:], 'b-')
-    plt.xlabel('Number of Iterations')
-    plt.ylabel('Cost')
-    plt.title('Convergence of Gradient Descent')
+    fig.legend([scatter1, scatter2], ['training data', 'fitting data'])
+
+
+    # if method = 'G', Plot cost history
+    if method == 'G':
+        plt.figure(2)
+        plt.plot(np.arange(0, 30, 1), myLR.cost_history.T[:30,:], 'b-')
+        plt.xlabel('Number of Iterations')
+        plt.ylabel('Cost')
+        plt.title('Convergence of Gradient Descent')
 
     plt.show()
