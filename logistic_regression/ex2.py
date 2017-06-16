@@ -48,12 +48,18 @@ if __name__ == '__main__':
     plt.ylabel('Exam 2 score')
     plt.title('Scatter plot of training data')
 
-
+    # Begin training
     myLR = LogisticRegression()
 
     iteration = 1500
+    learning_rate = 0.1
+    normaliztion = False
 
-    theta = myLR.training(X, y, iteration)
+    # 'N' represents Newton's method, 'G' represents gradient descent
+    theta = myLR.training(X, y, iteration, 'N', learning_rate, normalization=normaliztion)
+
+    print('Predict Result of [80, 80]:')
+    print(myLR.predict(np.array([[80, 80]]), theta))
 
     print('\n\nTheta:')
     print(theta.T)
@@ -61,8 +67,13 @@ if __name__ == '__main__':
 
     # Plot Decision boundary
     plot_x = np.array([np.min(X[:,1])-2,  np.max(X[:,1])+2])
-    plot_y =  (-1/theta[2])*(theta[1]*plot_x + theta[0])
-    plt.plot(plot_x, plot_y, 'r-', label = 'Decision Boundary')
+    plot_y = (-1 / theta[2]) * (theta[1] * plot_x + theta[0])
+
+    if normaliztion:
+        plot_x = np.array([myLR.X[20, 1] - 2, myLR.X[30, 1] + 2]) *myLR.X_std[0] + myLR.X_mean[0]
+        plot_y = (-1/theta[2])*(theta[1]*np.array([myLR.X[20, 1] - 2, myLR.X[30, 1] + 2]) + theta[0])*myLR.X_std[1] + myLR.X_mean[1]
+
+    plt.plot(plot_x, plot_y, 'r-', label='Decision Boundary')
     plt.legend(loc = 0)
 
     # Plot cost history

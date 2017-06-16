@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import fmin_bfgs
 from matplotlib import pyplot as plt
 
 
@@ -37,7 +38,18 @@ class LogisticRegression:
 
         return J
 
-    def gradient_function(self, X, y, theta):
+    def _calculate_mean_std(self, X):
+        self.X_mean = np.mean(X, axis=0)
+        self.X_std = np.std(X, axis=0)
+
+    def _feature_normalize(self, X, m):
+
+        for i in range(m):
+            X[i, :] = (X[i, :] - self.X_mean) / self.X_std
+
+        return X
+
+    def gradient_descent(self, X, y, learning_rate, theta, iteration):
         '''
 
         :param X:
@@ -46,8 +58,24 @@ class LogisticRegression:
         :return:
         '''
         m = X.shape[0]
-        h = self._hypothesis_function(X, theta)
-        return (1/m)* (X.T *(h-y))
+        self.theta = theta
+        self.cost_history[0, 0] = self.cost_function(X, y, self.theta)
+
+
+        for i in range(iteration):
+            # hypothesis function
+            h = self._hypothesis_function(X, self.theta)
+
+            # Gradient
+            der_J = (1/m)* np.dot(X.T ,(h-y))
+
+            # Update theta
+            self.theta = self.theta - learning_rate * der_J
+
+
+            self.cost_history[0, i] = self.cost_function(X, y, self.theta)
+
+        return self.theta
 
 
     def newton_conjugate_gradient(self, X, y, theta, iteration):
@@ -84,7 +112,7 @@ class LogisticRegression:
         return self.theta
 
 
-    def training(self, X, y, iteration = 400, method = 'N'):
+    def training(self, X, y, iteration = 400, method = 'G', learning_rate = 0.01, normalization = False):
 
         m = X.shape[0] # total number of training data
         n = X.shape[1] # total number of features
@@ -92,24 +120,30 @@ class LogisticRegression:
         self.X = np.array(X)
         self.y = np.array(y)
 
-        # if method == 'N':
-
         theta = np.zeros((n+1, 1))
-        self.X = np.concatenate((np.ones((m, 1), dtype=float), self.X),
-                                axis=1)  # create corresponding x0 for theta0
 
         self.cost_history = np.zeros((1,iteration))
 
-        return self.newton_conjugate_gradient(self.X, self.y, theta, iteration)
+        if method == 'N': # Newton' method
+            self.X = np.concatenate((np.ones((m, 1), dtype=float), self.X),
+                                    axis=1)  # create corresponding x0 for theta0
+            return self.newton_conjugate_gradient(self.X, self.y, theta, iteration)
+        elif method == 'G': # gradient descent
+            if normalization:
+                self._calculate_mean_std(self.X)
+                self.X = self._feature_normalize(self.X, m)
+            self.X = np.concatenate((np.ones((m, 1), dtype=float), self.X),
+                                    axis=1)  # create corresponding x0 for theta0
+            return self.gradient_descent(self.X, self.y, learning_rate, theta, iteration)
 
 
-    def predict(self, X, theta,):
+    def predict(self, X, theta):
         new_X = np.array(X)
         m = X.shape[0]
 
         new_X = np.concatenate((np.ones((m, 1), dtype=float), new_X), axis=1)
 
-        return self._hypothesis_function(new_X, theta)
+        return int(self._hypothesis_function(new_X, theta)>=0.5)
 
 
     def cost_function_reg(self):
