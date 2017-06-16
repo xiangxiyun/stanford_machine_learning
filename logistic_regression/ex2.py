@@ -18,24 +18,6 @@ def read_data(filename):
     return np.array(training_data_set)
 
 
-def plot_data(X, y):
-    '''
-    Visualizing the training data
-    :param X: Input features, numpy array
-    :param y: Input classes, numpy array
-    :return: None
-    '''
-    neg = X[np.where(y == 0)[0], :]
-    pos = X[np.where(y == 1)[0], :]
-
-    plt.figure()
-    plt.plot(pos[:, 0], pos[:, 1], 'g+', label = 'Admitted')
-    plt.plot(neg[:, 0], neg[:, 1], 'yo', label = 'Not Admitted')
-    plt.legend(loc = 0)
-    plt.xlabel('Exam 1 score')
-    plt.ylabel('Exam 2 score')
-    plt.show()
-
 
 
 
@@ -49,7 +31,45 @@ if __name__ == '__main__':
     X = training_data[:, :-1]
     y = training_data[:, -1:]
 
-    # Plot trainin data
-    plot_data(X, y)
+    print('\nX shape:')
+    print(X.shape)
+    print('Y shape:')
+    print(y.shape)
+
+    # Plot training data
+    neg = X[np.where(y == 0)[0], :]
+    pos = X[np.where(y == 1)[0], :]
+
+    plt.figure(1)
+    plt.plot(pos[:, 0], pos[:, 1], 'g+', label = 'Admitted')
+    plt.plot(neg[:, 0], neg[:, 1], 'yo', label = 'Not Admitted')
+
+    plt.xlabel('Exam 1 score')
+    plt.ylabel('Exam 2 score')
+    plt.title('Scatter plot of training data')
+
 
     myLR = LogisticRegression()
+
+    iteration = 1500
+
+    theta = myLR.training(X, y, iteration)
+
+    print('\n\nTheta:')
+    print(theta.T)
+
+
+    # Plot Decision boundary
+    plot_x = np.array([np.min(X[:,1])-2,  np.max(X[:,1])+2])
+    plot_y =  (-1/theta[2])*(theta[1]*plot_x + theta[0])
+    plt.plot(plot_x, plot_y, 'r-', label = 'Decision Boundary')
+    plt.legend(loc = 0)
+
+    # Plot cost history
+    plt.figure(2)
+    plt.plot(np.arange(0, 1500, 1), myLR.cost_history.T[:1500,:], 'b-')
+    plt.xlabel('Number of Iterations')
+    plt.ylabel('Cost')
+    plt.title('Convergence of Newton Conjugate Gradient')
+
+    plt.show()
