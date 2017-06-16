@@ -23,6 +23,7 @@ class LogisticRegression:
         '''
         return self._sigmoid(np.dot(X, theta))
 
+
     def cost_function(self, X, y, theta):
         '''
 
@@ -37,6 +38,11 @@ class LogisticRegression:
         J = (1/m)*np.sum( (0-y) * np.log(h) - (1-y)*np.log(1-h) )
 
         return J
+
+    def _derivation_function(self, X, y, theta, h):
+        m = X.shape[0]
+        h = self._hypothesis_function(X, theta)
+        return (1/m)* np.dot(X.T ,(h-y))
 
     def _calculate_mean_std(self, X):
         self.X_mean = np.mean(X, axis=0)
@@ -67,7 +73,7 @@ class LogisticRegression:
             h = self._hypothesis_function(X, self.theta)
 
             # Gradient
-            der_J = (1/m)* np.dot(X.T ,(h-y))
+            der_J = self._derivation_function(X, y, self.theta, h)
 
             # Update theta
             self.theta = self.theta - learning_rate * der_J
@@ -102,7 +108,7 @@ class LogisticRegression:
             H = (1/m)* ( np.dot(h.T, (1-h)) * np.dot(X.T, X) )
 
             # Gradient
-            der_J = (1/m)* np.dot(X.T ,(h-y))
+            der_J = self._derivation_function(X, y, self.theta, h)
 
             # Update theta
             self.theta = self.theta - np.dot(np.linalg.pinv(H), der_J)
