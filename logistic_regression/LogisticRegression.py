@@ -149,7 +149,8 @@ class LogisticRegression:
 
         new_X = np.concatenate((np.ones((m, 1), dtype=float), new_X), axis=1)
 
-        return int(self._hypothesis_function(new_X, theta)>=0.5)
+        #return int(self._hypothesis_function(new_X, theta)>=0.5)
+        return self._hypothesis_function(new_X, theta)
 
 
     def cost_function_reg(self):

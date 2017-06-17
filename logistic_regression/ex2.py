@@ -59,7 +59,7 @@ if __name__ == '__main__':
     theta = myLR.training(X, y, iteration, 'N', learning_rate, normalization=normaliztion)
 
     print('Predict Result of [80, 80]:')
-    print(myLR.predict(np.array([[80, 80]]), theta))
+    print(myLR.predict(np.array([[45, 85]]), theta))
 
     print('\n\nTheta:')
     print(theta.T)
