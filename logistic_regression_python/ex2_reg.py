@@ -17,18 +17,20 @@ def read_data(filename):
 
     return np.array(training_data_set)
 
-def map_feature(x1, x2):
+def map_features(x1, x2):
     '''
-
-    :param x1:
-    :param x2:
-    :return:
+    map_feature(x1, x2) maps the two input features
+    to quadratic features used in the regularization exercise.
+    :param x1: numpy array, size m*1
+    :param x2: numpy array, size m*1
+    :return: numpy array, size m*28
     '''
     degree = 6
-    out = np.array(x1[:,1].shape)
-    for i in range(degree):
-        for j in range(i):
-            out[:, -1] = np.exp(x1, (i-j))*np.exp(x2, j)
+    out = np.ones(x1.shape)
+    for i in range(1,degree+1):
+        for j in range(i+1):
+            hold = (x1**(i-j))*(x2**j)
+            out = np.concatenate((out, hold), 1)
 
     return out
 
@@ -69,24 +71,30 @@ if __name__ == '__main__':
     normaliztion = False
 
     # 'N' represents Newton's method, 'G' represents gradient descent
-    theta = myLR.training(X, y, iteration, 'N', learning_rate, normalization=normaliztion)
+    theta = myLR.training(map_features(X[:, 0:1], X[:,1:]), y, iteration, 'N', learning_rate, normalization=normaliztion, _lambda=1)
 
-    print('Predict Result of [80, 80]:')
-    print(myLR.predict(np.array([[45, 85]]), theta))
+    print('Predict Result of [0, -0.8]:')
+    new_X = map_features(np.array([[0]]),np.array([[-0.8]]))
+    print(myLR.predict(new_X, theta))
 
     print('\n\nTheta:')
     print(theta.T)
 
 
     # Plot Decision boundary
-    # plot_x = np.array([np.min(X[:,1])-2,  np.max(X[:,1])+2])
-    # plot_y = (-1 / theta[2]) * (theta[1] * plot_x + theta[0])
+    # def draw_boundary(classifier):
+    #     dim = np.linspace(-1, 1.5, 1000)
+    #     dx, dy = np.meshgrid(dim, dim)
+    #     v = map_features(dx.flatten(), dy.flatten(), order=6)
+    #     z = (np.dot(classifier.coef_, v) + classifier.intercept_).reshape(1000, 1000)
+    #     CS = plt.contour(dx, dy, z, levels=[0], colors=['r'])
     #
-    # if normaliztion:
-    #     plot_x = np.array([myLR.X[20, 1] - 2, myLR.X[30, 1] + 2]) *myLR.X_std[0] + myLR.X_mean[0]
-    #     plot_y = (-1/theta[2])*(theta[1]*np.array([myLR.X[20, 1] - 2, myLR.X[30, 1] + 2]) + theta[0])*myLR.X_std[1] + myLR.X_mean[1]
     #
-    # plt.plot(plot_x, plot_y, 'r-', label='Decision Boundary')
+    # render_tests(data, accepted, rejected)
+    # draw_boundary(classifier)
+    plt.legend();
+
+
     plt.legend(loc = 0)
 
     # Plot cost history
