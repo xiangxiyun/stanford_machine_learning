@@ -21,8 +21,6 @@ def read_data(filename):
 
 
 
-
-
 if __name__ == '__main__':
 
     input_filename = 'data/ex2data1.txt'
@@ -51,7 +49,7 @@ if __name__ == '__main__':
     # Begin training
     myLR = LogisticRegression()
 
-    iteration = 1500
+    iteration = 6000
     learning_rate = 0.1
     normaliztion = False
 
@@ -77,8 +75,11 @@ if __name__ == '__main__':
     plt.legend(loc = 0)
 
     # Plot cost history
+
+    print('Cost:')
+    print(myLR.cost_history.T[5900,:])
     plt.figure(2)
-    plt.plot(np.arange(0, 1500, 1), myLR.cost_history.T[:1500,:], 'b-')
+    plt.plot(np.arange(0, 2000, 1), myLR.cost_history.T[:2000,:], 'b-')
     plt.xlabel('Number of Iterations')
     plt.ylabel('Cost')
     plt.title('Convergence of Newton Conjugate Gradient')
