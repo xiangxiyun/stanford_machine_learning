@@ -11,8 +11,10 @@ class LogisticRegression:
         :param z: size: m*1
         :return: size: m*1
         '''
-
-        return 1/(1+np.exp(0-z))
+        res = 1/(1+np.exp(0-z))
+        idx = res == 1  # incase log(1) = 0
+        res[idx] = .99
+        return res
 
     def _hypothesis_function(self, X, theta):
         '''
@@ -24,7 +26,7 @@ class LogisticRegression:
         return self._sigmoid(np.dot(X, theta))
 
 
-    def _derivation_function(self, theta, X, y):
+    def _derivation_function(self, theta, X, y, _lambda = 0):
         '''
 
         :param X:
@@ -34,8 +36,15 @@ class LogisticRegression:
         :return:
         '''
         m = X.shape[0]
-        h = self._hypothesis_function(X, theta)
-        return (1/m)* np.dot(X.T ,(h-y))
+        new_X = np.concatenate((np.ones((m, 1), dtype=float), X),
+                axis=1)  # create corresponding x0 for theta0
+        h = self._hypothesis_function(new_X, theta)
+
+        grad = (1/m)* np.dot(new_X.T ,(h-np.ndarray.flatten(y)))
+
+        grad[1:] += _lambda/m*theta[1:]
+
+        return grad
 
     def _calculate_mean_std(self, X):
         self.X_mean = np.mean(X, axis=0)
@@ -48,7 +57,7 @@ class LogisticRegression:
 
         return X
 
-    def cost_function(self, theta, X, y):
+    def cost_function(self, theta, X, y, _lambda = 0):
         '''
 
         :param X: numpy array, size m*(n+1),
@@ -57,12 +66,17 @@ class LogisticRegression:
         :param y: numpy array, size m*1.
         :param theta: numpy array, size (n+1)*1.
         :return: float, J(cost).
+
         '''
         m = X.shape[0]
+        new_X = np.concatenate((np.ones((m, 1), dtype=float), X),
+                        axis=1)  # create corresponding x0 for theta0
 
-        h = self._hypothesis_function(X, theta)
+        h = self._hypothesis_function(new_X, theta)
 
-        J = (1/m)*np.sum( (0-y) * np.log(h) - (1-y)*np.log(1-h) )
+        # J = (1/m)*np.sum( (0-y) * np.log(h) - (1-y)*np.log(1-h) )
+        J = -1.0 / m * (np.dot(y.T, np.log(h))+ np.dot(1 - y.T, np.log(1 - h)))
+        J += _lambda/(2*m)*np.sum(theta[1:]**2)
 
         return J
 
@@ -79,24 +93,30 @@ class LogisticRegression:
         self.theta = theta
         self.cost_history[0, 0] = self.cost_function(self.theta, X, y)
 
+        new_X = np.concatenate((np.ones((m, 1), dtype=float), X),
+            axis=1)  # create corresponding x0 for theta0
 
-        for i in range(iteration):
+
+        for i in range(1, iteration):
             # hypothesis function
-            h = self._hypothesis_function(X, self.theta)
+            h = self._hypothesis_function(new_X, self.theta)
 
             # Gradient
-            der_J = self._derivation_function(self.theta, X, y)
+            # der_J = self._derivation_function(self.theta, X, y)
+            # don't use self._derivation_function because the dimension
+            # of y is customized for fmin_bfgs function
+            der_J = (1/m)* np.dot(new_X.T ,(h-y))
 
             # Update theta
             self.theta = self.theta - learning_rate * der_J
 
 
-            self.cost_history[0, i] = self.cost_function(self.theta, X, y)
+            self.cost_history[0, i] = self.cost_function(self.theta, X, y)[0,0]
 
         return self.theta
 
 
-    def newton_conjugate_gradient(self, X, y, theta, iteration, _lambda = None):
+    def newton_conjugate_gradient(self, X, y, theta, iteration):
         '''
         Using Newton's Conjugate Gradient method to minimize cost function.
         Utilizing Hessian matrix(second-order partial derivatives) of cost function.
@@ -111,120 +131,82 @@ class LogisticRegression:
         self.theta = theta
         self.cost_history[0,0] = self.cost_function(self.theta, X, y)
 
+        new_X = np.concatenate((np.ones((m, 1), dtype=float), X),
+            axis=1)  # create corresponding x0 for theta0
 
-        for i in range(iteration):
+        for i in range(1,iteration):
 
-            h = self._hypothesis_function(X, self.theta)
+
+            h = self._hypothesis_function(new_X, self.theta)
 
             # Hessian Matrix
-            H = (1/m)* ( np.dot(h.T, (1-h)) * np.dot(X.T, X) )
+            H = (1/m)* ( np.dot(h.T, (1-h))[0,0] * np.dot(new_X.T, new_X) )
 
-            if _lambda == None:
-                # Gradient
-                der_J = self._derivation_function(self.theta, X, y)
 
-                # Update theta
-                self.theta = self.theta - np.dot(np.linalg.pinv(H), der_J)
+            # Gradient
+            # der_J = self._derivation_function(self.theta, X, y)
+            # don't use self._derivation_function because the dimension
+            # of y is customized for fmin_bfgs function
+            der_J = (1/m)* np.dot(new_X.T ,(h-y))
 
-                self.cost_history[0, i] = self.cost_function(self.theta, X, y)
+            # Update theta
+            a = np.linalg.pinv(H)
+            self.theta = self.theta - np.dot(a , der_J)
 
-            else:
+            self.cost_history[0, i] = self.cost_function(self.theta, X, y)[0,0]
 
-                # Gradient
-                der_J = self._derivation_function_reg(self.theta, X, y, _lambda)
-
-                # Update theta
-                self.theta = self.theta - np.dot(np.linalg.pinv(H), der_J)
-
-                self.cost_history[0, i] = self.cost_function_reg(self.theta, X, y, _lambda)
 
         return self.theta
 
 
-    def using_fmin_bfgs(self, X, y, theta):
+    def using_fmin_bfgs(self,theta, iteration = 400, _lambda = 0):
 
-        xopt = fmin_bfgs(self.cost_function, theta, fprime=self._derivation_function, args = (X, y))
+        xopt = fmin_bfgs(self.cost_function, theta, \
+                         fprime=self._derivation_function, \
+                         args = (self.X, self.y, _lambda), maxiter=iteration)
 
-        # fopt = self.cost_function( xopt, X, y)
         return xopt
 
-    def training(self, X, y, iteration = 400, method = 'G', learning_rate = 0.01, normalization = False, _lambda = None):
+    def training(self, X, y, iteration = 400, method = 'newton', learning_rate = 0.01, _lambda = 0):
 
         m = X.shape[0] # total number of training data
         n = X.shape[1] # total number of features
 
         self.X = np.array(X)
         self.y = np.array(y)
+        self.method = method
 
         theta = np.zeros((n+1, 1))
 
         self.cost_history = np.zeros((1,iteration))
 
-        if method == 'N': # Newton' method
-            if _lambda == None:
-                self.X = np.concatenate((np.ones((m, 1), dtype=float), self.X),
-                                    axis=1)  # create corresponding x0 for theta0
-            else:
-                theta = np.zeros((n, 1))
-            return self.newton_conjugate_gradient(self.X, self.y, theta, iteration, _lambda)
-        elif method == 'G': # gradient descent
-            if normalization:
-                self._calculate_mean_std(self.X)
-                self.X = self._feature_normalize(self.X, m)
-            self.X = np.concatenate((np.ones((m, 1), dtype=float), self.X),
-                                    axis=1)  # create corresponding x0 for theta0
+        if method == 'newton': # Newton's method
+            return self.newton_conjugate_gradient(self.X, self.y, theta, iteration)
+
+        elif method == 'gradient': # Gradient descent method
+
+            # normalization
+            self._calculate_mean_std(self.X)
+            self.X = self._feature_normalize(self.X, m)
+
             return self.gradient_descent(self.X, self.y, learning_rate, theta, iteration)
-        else:
-            self.X = np.concatenate((np.ones((m, 1), dtype=float), self.X),
-                                    axis=1)  # create corresponding x0 for theta0
-            theta = self.using_fmin_bfgs(self.X, self.y, theta)
-            return theta
+
+        elif method == 'bfgs': # fmin_bfgs method
+            return fmin_bfgs(self.cost_function, theta, \
+                         fprime=self._derivation_function, \
+                         args = (self.X, self.y, _lambda), maxiter=iteration)
+
 
 
     def predict(self, X, theta):
-        new_X = np.array(X)
         m = X.shape[0]
 
-        # new_X = np.concatenate((np.ones((m, 1), dtype=float), new_X), axis=1)
+        # if we do normalize training data
+        # we need to do the same on testing data
+        if self.method == 'gradient':
+            X = self._feature_normalize(X, m)
+
+        new_X = np.concatenate((np.ones((m, 1), dtype=float), X), axis=1)
 
         #return int(self._hypothesis_function(new_X, theta)>=0.5)
         return self._hypothesis_function(new_X, theta)
-
-
-    def cost_function_reg(self, theta, X, y, _lambda = 1):
-        '''
-
-        :param X: numpy array, size m*(n+1),
-                  m is the number of training data,
-                  n is the number of features.
-        :param y: numpy array, size m*1.
-        :param theta: numpy array, size (n+1)*1.
-        :return: float, J(cost).
-        '''
-        m = X.shape[0]
-
-        h = self._hypothesis_function(X, theta)
-
-        J = (1/m)*np.sum( (0-y) * np.log(h) - (1-y)*np.log(1-h) )
-
-        J += _lambda/(2*m)*np.sum(theta[1:, :]**2)
-
-
-        return J
-
-    def _derivation_function_reg(self, theta, X, y, _lambda = 1):
-        '''
-
-        :param X:
-        :param y:
-        :param theta:
-        :param h:
-        :return:
-        '''
-        m = X.shape[0]
-        h = self._hypothesis_function(X, theta)
-        grad = (1/m)* np.dot(X.T ,(h-y))
-
-        grad[1:, :] += _lambda/m*theta[1:, :]
-
-        return grad
