@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from linear_regression import LinearRegression
+from linear_regression_python.linear_regression import LinearRegression
+
 
 def read_data(filename):
     '''

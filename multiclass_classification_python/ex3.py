@@ -1,6 +1,5 @@
 import scipy.io
-
-from ..logistic_regression_python import LogisticRegression
+from logistic_regression_python.logistic_regression import LogisticRegression
 
 
 

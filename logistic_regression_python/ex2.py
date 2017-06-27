@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from LogisticRegression import LogisticRegression
+from logistic_regression_python.logistic_regression import LogisticRegression
 
 def read_data(filename):
     '''
