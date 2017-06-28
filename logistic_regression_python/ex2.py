@@ -69,7 +69,7 @@ if __name__ == '__main__':
     # 'newton' represents Newton's method
     # 'gradiant' represents gradient descent
     # 'bfgs' represents fmin_bfgs method
-    method = 'gradient'
+    method = 'bfgs'
     print('\nMethod: ' + method + '\n')
 
     # # Map feature for ex2data2

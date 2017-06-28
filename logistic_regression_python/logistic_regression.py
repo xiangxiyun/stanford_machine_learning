@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fmin_bfgs
+
 from matplotlib import pyplot as plt
 
 
